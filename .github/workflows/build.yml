@@ -37,6 +37,7 @@ jobs:
         run: |
           python3 -m venv venv
           venv/bin/pip install -U pip
+          venv/bin/pip install -r requirements.txt
           venv/bin/pip install git+https://opendev.org/openstack/kolla@$KOLLA_VERSION
 
       - name: Login to Registry
@@ -51,4 +52,4 @@ jobs:
           KOLLA_PROFILE: ${{ inputs.kolla_build_profile }}
           KOLLA_TAG: ${{ inputs.tag }}
         run: |
-          kolla-build --config-file kolla-build.conf --tag $KOLLA_TAG --profile $KOLLA_PROFILE --push
+          venv/bin/kolla-build --config-file kolla-build.conf --tag $KOLLA_TAG --profile $KOLLA_PROFILE --push
