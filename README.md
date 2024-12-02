@@ -1,6 +1,8 @@
 # openstack-kolla-images
 
-## Build
+Pipeline for building custom [OpenStack Kolla](https://docs.openstack.org/kolla/latest/index.html) container images.
+
+## Local Build
 
 Preparation:
 ```sh
