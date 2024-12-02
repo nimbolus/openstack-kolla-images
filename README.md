@@ -16,6 +16,5 @@ pip install docker podman
 
 Build images:
 ```sh
-kolla-build --config-file kolla-build.conf fluentd
-kolla-build --config-file kolla-build.conf neutron-l3-agent
+kolla-build --config-file kolla-build.conf --profile custom
 ```
