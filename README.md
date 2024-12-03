@@ -27,6 +27,8 @@ kolla-build --config-file kolla-build.conf --profile custom
 
 Go to [Actions](https://github.com/nimbolus/openstack-kolla-images/actions/workflows/build.yml) and click on `Run workflow`.
 
+Images are pushed to [quay.io/nimbolus/openstack-kolla](https://quay.io/repository/nimbolus/openstack-kolla).
+
 ## Customization
 
 ### Add a Patch
