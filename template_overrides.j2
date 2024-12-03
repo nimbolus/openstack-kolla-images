@@ -9,3 +9,7 @@
 ADD additions-archive /
 RUN bash -c 'while read patch; do patch -d /var/lib/kolla/venv/lib/python3.9/site-packages -p 1 -i /additions/$patch; done < /additions/series'
 {% endblock %}
+{% block neutron_bgp_dragent_footer %}
+ADD additions-archive /
+RUN bash -c 'while read patch; do patch -d /var/lib/kolla/venv/lib/python3.9/site-packages -p 1 -i /additions/$patch; done < /additions/series'
+{% endblock %}
