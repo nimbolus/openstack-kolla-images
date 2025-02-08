@@ -1,0 +1,65 @@
+diff --git a/neutron/agent/l3/dvr_edge_router.py b/neutron/agent/l3/dvr_edge_router.py
+index a335e8b3c2..bfb6ead924 100644
+--- a/neutron/agent/l3/dvr_edge_router.py
++++ b/neutron/agent/l3/dvr_edge_router.py
+@@ -418,3 +418,60 @@ class DvrEdgeRouter(dvr_local_router.DvrLocalRouter):
+         # Cover mixed dvr_snat and compute node, aka a dvr_snat node has both
+         # centralized and distributed floating IPs.
+         super(DvrEdgeRouter, self).process_floating_ip_nat_rules()
++
++    def floating_mangle_rules(self, floating_ip, fixed_ip, internal_mark):
++        if not self.fip_ns:
++            return []
++
++        external_port = self.get_ex_gw_port()
++        external_devicename = self.get_external_device_name(
++            external_port['id'])
++        mark_traffic_to_floating_ip = (
++            'floatingip', '-d %s/32 -i %s -j MARK --set-xmark %s' % (
++                floating_ip, external_devicename, internal_mark))
++        mark_traffic_from_fixed_ip = (
++            'FORWARD', '-s %s/32 -j $float-snat' % fixed_ip)
++        return [mark_traffic_to_floating_ip, mark_traffic_from_fixed_ip]
++
++    def process_floating_ip_address_scope_rules(self):
++        """Configure address scope related iptables rules for the router's
++         floating IPs.
++        """
++
++        # Clear out all iptables rules for floating ips
++        self.snat_iptables_manager.ipv4['mangle'].clear_rules_by_tag('floating_ip')
++        all_floating_ips = self.get_floating_ips()
++        ext_scope = self._get_external_address_scope()
++        # Filter out the floating ips that have fixed ip in the same address
++        # scope. Because the packets for them will always be in one address
++        # scope, no need to manipulate MARK/CONNMARK for them.
++        floating_ips = [fip for fip in all_floating_ips
++                        if fip.get('fixed_ip_address_scope') != ext_scope]
++        if floating_ips:
++            ext_scope_mark = self.get_address_scope_mark_mask(ext_scope)
++            ports_scopemark = self._get_address_scope_mark()
++            devices_in_ext_scope = {
++                device for device, mark
++                in ports_scopemark[lib_constants.IP_VERSION_4].items()
++                if mark == ext_scope_mark}
++            # Add address scope for floatingip egress
++            for device in devices_in_ext_scope:
++                self.snat_iptables_manager.ipv4['mangle'].add_rule(
++                    'float-snat',
++                    '-o %s -j MARK --set-xmark %s'
++                    % (device, ext_scope_mark),
++                    tag='floating_ip')
++
++        # Loop once to ensure that floating ips are configured.
++        for fip in floating_ips:
++            # Rebuild iptables rules for the floating ip.
++            fip_ip = fip['floating_ip_address']
++            # Send the floating ip traffic to the right address scope
++            fixed_ip = fip['fixed_ip_address']
++            fixed_scope = fip.get('fixed_ip_address_scope')
++            internal_mark = self.get_address_scope_mark_mask(fixed_scope)
++            mangle_rules = self.floating_mangle_rules(
++                fip_ip, fixed_ip, internal_mark)
++            for chain, rule in mangle_rules:
++                self.snat_iptables_manager.ipv4['mangle'].add_rule(
++                    chain, rule, tag='floating_ip')
