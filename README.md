@@ -15,7 +15,7 @@ source venv/bin/activate
 # install requirements
 pip install -r requirements.txt
 # install kolla
-pip install git+https://opendev.org/openstack/kolla@stable/2024.1
+pip install git+https://opendev.org/openstack/kolla@stable/2025.1
 ```
 
 Build images:
