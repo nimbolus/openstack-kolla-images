@@ -12,6 +12,13 @@ RUN dnf install -y --enablerepo epel \
     && dnf clean all
 {% endblock %}
 
+# glance
+{% set glance_base_packages_append = ['patch'] %}
+{% block glance_api_footer %}
+ADD additions-archive /
+RUN bash -c 'while read patch; do patch -d /var/lib/kolla/venv/lib/python3.9/site-packages -p 1 -i /additions/$patch; done < /additions/series'
+{% endblock %}
+
 # neutron
 {% set neutron_base_packages_append = ['patch'] %}
 {% block neutron_l3_agent_footer %}
