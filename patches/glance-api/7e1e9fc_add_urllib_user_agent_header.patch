@@ -12,12 +12,12 @@ Signed-off-by: Mathieu Tortuyaux <mathieu.tortuyaux@gmail.com>
 ---
 
 diff --git a/glance/async_/flows/ovf_process.py b/glance/async_/flows/ovf_process.py
-index 36d7196..ce748fe 100644
+index 36d719666..ce748fe4f 100644
 --- a/glance/async_/flows/ovf_process.py
 +++ b/glance/async_/flows/ovf_process.py
-@@ -85,7 +85,13 @@
+@@ -85,7 +85,13 @@ class _OVF_Process(task.Task):
              raise exception.ImportTaskError(msg)
- 
+
          opener = urllib.request.build_opener(script_utils.SafeRedirectHandler)
 -        return opener.open(uri)
 +
@@ -27,41 +27,22 @@ index 36d7196..ce748fe 100644
 +            headers={'User-agent': 'glance-client'},
 +        )
 +        return opener.open(req)
- 
+
      def execute(self, image_id, file_path):
          """
 diff --git a/glance/common/scripts/utils.py b/glance/common/scripts/utils.py
-index cbd7f77..500b46e 100644
+index aa6354d21..2029c2668 100644
 --- a/glance/common/scripts/utils.py
 +++ b/glance/common/scripts/utils.py
-@@ -164,7 +164,11 @@
-         return open(uri, "rb"), size
- 
+@@ -162,7 +162,10 @@ def get_image_data_iter(uri):
+         return open(uri, "rb")
+
      opener = urllib.request.build_opener(SafeRedirectHandler)
--    urlopen = opener.open(uri)
+-    return opener.open(uri)
 +
 +    # Override 'User-agent' header to avoid CloudFlare 403 errors.
 +    req = urllib.request.Request(uri, headers={'User-agent': 'glance-client'})
-+    urlopen = opener.open(req)
-+
-     try:
-         size = int(urlopen.headers['content-length'])
-     except (KeyError, ValueError, TypeError):
-diff --git a/glance/tests/unit/common/scripts/test_scripts_utils.py b/glance/tests/unit/common/scripts/test_scripts_utils.py
-index d18d3be..0c41b8d 100644
---- a/glance/tests/unit/common/scripts/test_scripts_utils.py
-+++ b/glance/tests/unit/common/scripts/test_scripts_utils.py
-@@ -340,7 +340,12 @@
-             found_handler,
-             "SafeRedirectHandler should be passed to build_opener")
- 
--        mock_opener.open.assert_called_once_with("http://example.com/image")
-+        mock_opener.open.assert_called_once()
-+        (req_arg,), _ = mock_opener.open.call_args
-+        self.assertIsInstance(req_arg, urllib.request.Request)
-+        self.assertEqual(req_arg.full_url, "http://example.com/image")
-+        self.assertEqual(req_arg.headers.get("User-agent"), "glance-client")
-+
-         self.assertEqual(len(result), 2)
-         self.assertEqual(result[0], mock_response)
-         self.assertEqual(result[1], 0)
++    return opener.open(req)
+
+
+ class CallbackIterator(object):
